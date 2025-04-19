@@ -1,0 +1,21 @@
+[tool.poetry]
+name = "jlistings"
+version = "0.1.0"
+description = "Japanese real estate listing aggregator with AI agents"
+authors = ["justin <justin@example.com>"]
+
+[tool.poetry.dependencies]
+python = ">=3.9,<3.13"
+openai = "^1.0.0"
+langchain = "^0.1.0"
+requests = "^2.31.0"
+beautifulsoup4 = "^4.12.3"
+psycopg2-binary = "^2.9.9"
+sqlalchemy = "^2.0.29"
+
+[tool.poetry.dev-dependencies]
+pytest = "^8.1.1"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
