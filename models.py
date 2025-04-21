@@ -33,6 +33,7 @@ class Listing(Base):
     property_name = Column(String)
     homes_id = Column(String, unique=True, index=True)  # Unique code from Lifeful/Homes
     athome_id = Column(String, unique=True, index=True) # Unique code from AtHome
+    new_or_used = Column(String)  # 'new' or 'used'
     __table_args__ = (
         UniqueConstraint('address', 'property_name', 'area', 'layout', name='uq_listing_composite_key'),
     )
