@@ -1,0 +1,24 @@
+#!/bin/bash
+set -e
+
+# Install Poetry if not present
+if ! command -v poetry >/dev/null 2>&1; then
+  echo 'Installing poetry...'
+  brew install poetry
+else
+  echo 'Poetry already installed.'
+fi
+
+# Install Python dependencies
+poetry install
+
+# Create the database if it doesn't exist
+if ! psql -lqt | cut -d \| -f 1 | grep -qw jlistings; then
+  echo 'Creating database jlistings...'
+  createdb jlistings
+else
+  echo 'Database jlistings already exists.'
+fi
+
+# Set up the schema
+poetry run python init_db.py

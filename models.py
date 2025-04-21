@@ -3,6 +3,19 @@ from sqlalchemy.ext.declarative import declarative_base
 
 Base = declarative_base()
 
+def normalize_listing_keys(address, property_name, area, layout):
+    # Normalize by stripping whitespace, fixing encoding, and lowercasing
+    def norm(val):
+        if val is None:
+            return None
+        return str(val).strip().replace('\u3000', ' ').replace('\xa0', ' ').lower()
+    return (
+        norm(address),
+        norm(property_name),
+        norm(area),
+        norm(layout)
+    )
+
 class Listing(Base):
     __tablename__ = 'listings'
     id = Column(Integer, primary_key=True)
@@ -18,6 +31,11 @@ class Listing(Base):
     balcony = Column(String)
     built = Column(String)
     property_name = Column(String)
+    homes_id = Column(String, unique=True, index=True)  # Unique code from Lifeful/Homes
+    athome_id = Column(String, unique=True, index=True) # Unique code from AtHome
+    __table_args__ = (
+        UniqueConstraint('address', 'property_name', 'area', 'layout', name='uq_listing_composite_key'),
+    )
     # legacy/extra fields for future-proofing
     # prefecture, city, ward, neighborhood, building_number, latitude, longitude, is_new, construction_date, tax_amount, time_on_market
     # can be added as needed

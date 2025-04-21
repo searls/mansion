@@ -3,10 +3,15 @@ import os
 
 class SuumoScraper:
     def scrape(self, query=None):
-        # Parse the local fixture file for used manshon listings
-        path = os.path.join(os.path.dirname(__file__), '../research/suumo-used-manshon-results.html')
-        with open(path, encoding='utf-8') as f:
-            soup = BeautifulSoup(f, 'html.parser')
+        import requests
+        from urllib.parse import quote
+        # Always fetch live data from Suumo using the query
+        if not query:
+            raise ValueError('A query is required to scrape Suumo listings.')
+        url = f"https://suumo.jp/jj/bukken/ichiran/JJ010FJ001/?ar=030&bs=011&fw={quote(query)}"
+        resp = requests.get(url, headers={"User-Agent": "Mozilla/5.0"})
+        resp.encoding = 'utf-8'
+        soup = BeautifulSoup(resp.text, 'html.parser')
         results = []
         for card in soup.select('.property_unit'):
             data = {}
