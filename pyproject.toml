@@ -3,6 +3,7 @@ name = "jlistings"
 version = "0.1.0"
 description = "Japanese real estate listing aggregator with AI agents"
 authors = ["justin <justin@example.com>"]
+package-mode = false
 
 [tool.poetry.dependencies]
 python = ">=3.9,<3.13"
@@ -13,7 +14,7 @@ beautifulsoup4 = "^4.12.3"
 psycopg2-binary = "^2.9.9"
 sqlalchemy = "^2.0.29"
 
-[tool.poetry.dev-dependencies]
+[poetry.group.dev.dependencies]
 pytest = "^8.1.1"
 
 [build-system]
