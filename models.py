@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Float, Date, Boolean, UniqueConstraint
+from sqlalchemy import Column, Integer, String, Float, Date, Boolean, UniqueConstraint, DateTime, func
 from sqlalchemy.ext.declarative import declarative_base
 
 Base = declarative_base()
@@ -34,6 +34,8 @@ class Listing(Base):
     homes_id = Column(String, unique=True, index=True)  # Unique code from Lifeful/Homes
     athome_id = Column(String, unique=True, index=True) # Unique code from AtHome
     new_or_used = Column(String)  # 'new' or 'used'
+    created_at = Column(DateTime, default=func.now(), nullable=False)
+    updated_at = Column(DateTime, default=func.now(), onupdate=func.now(), nullable=False)
     __table_args__ = (
         UniqueConstraint('address', 'property_name', 'area', 'layout', name='uq_listing_composite_key'),
     )
