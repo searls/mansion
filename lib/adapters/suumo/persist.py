@@ -8,8 +8,8 @@ def upsert_listings(session: Session, listings):
     for listing in listings:
         existing = session.query(Listing).filter_by(suumo_id=listing.get('suumo_id'), source='suumo').first()
         if existing:
-            for field in ['title', 'url', 'price', 'address', 'station', 'area', 'layout', 'balcony', 'built', 'property_name', 'new_or_used']:
-                setattr(existing, field, listing.get(field) if field != 'property_name' else listing.get('物件名'))
+            for field in ['title', 'url', 'price', 'address', 'station', 'area', 'layout', 'balcony', 'built', 'new_or_used']:
+                setattr(existing, field, listing.get(field))
             existing.updated_at = datetime.utcnow()
             count_updated += 1
         else:
@@ -24,7 +24,6 @@ def upsert_listings(session: Session, listings):
                 layout=listing.get('layout'),
                 balcony=listing.get('balcony'),
                 built=listing.get('built'),
-                property_name=listing.get('物件名'),
                 suumo_id=listing.get('suumo_id'),
                 new_or_used=listing.get('new_or_used')
             ))

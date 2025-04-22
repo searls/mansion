@@ -1,8 +1,6 @@
+import sys
 import os
-from concurrent.futures import ThreadPoolExecutor
-from lib.adapters.suumo import fetch_listings
-from scrapers.lifeful import LifefulScraper
-from scrapers.athome import AtHomeScraper
+from lib.adapters.suumo_adapter import fetch_listings
 from models import Listing, Base
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
