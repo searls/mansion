@@ -1,3 +1,4 @@
+import logging
 import sys
 import os
 from lib.adapters.suumo_adapter import fetch_listings
@@ -6,6 +7,8 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 def main(query, region=None):
+    # Set logging to INFO for CLI runs
+    logging.basicConfig(level=logging.INFO)
     # Only Suumo uses the new adapter for now
     suumo_result = fetch_listings(query, region)
     print(f"[Suumo] Inserted: {suumo_result['db_stats']['inserted']}, Updated: {suumo_result['db_stats']['updated']}")

@@ -4,6 +4,9 @@ import json
 import requests
 import re
 from urllib.parse import quote
+import logging
+
+logger = logging.getLogger(__name__)
 
 class SuumoScraper:
     def __init__(self):
@@ -38,21 +41,31 @@ class SuumoScraper:
             region_code = self.find_region_code(keyword)
         results = []
         for bs_code, new_or_used in [('010', 'new'), ('011', 'used')]:
-            # TODO: Add source column support from ADR
-            url = f"https://suumo.jp/jj/bukken/ichiran/JJ010FJ001/?ar={region_code}&bs={bs_code}&fw={quote(keyword)}"
-            print(f"Scraping URL: {url}") # Added for debugging
+            # ---
+            # Mystery meat query params:
+            # For used listings (bs=011):
+            #   po=16 (sort by newest), pj=2 (descending), pc=100 (100 results per page), et=10 (10 min walk to station), md=2,3,4,5 (2-5+ LDK only)
+            #   cnb=0&cn=10 (built in the last 10 years)
+            # For new listings (bs=010):
+            #   bknlistmodeflg=1 (required for new listings), pc=100 (100 results), po=5 (sort by price), pj=1 (ascending/cheapest first), md=2,3,4,5 (2-5+ LDK only)
+            # ---
+            if bs_code == '011':  # Used listings
+                url = f"https://suumo.jp/jj/bukken/ichiran/JJ012FC001/?ar={region_code}&bs=011&md=2&md=3&md=4&md=5&et=10&fw={quote(keyword)}&po=16&pj=2&pc=100&cnb=0&cn=10"
+            else:  # New listings
+                url = f"https://suumo.jp/jj/bukken/ichiran/JJ011FC001/?ar={region_code}&bs=010&tj=0&po=5&pj=1&pc=100&fw={quote(keyword)}&md=2&md=3&md=4&md=5&bknlistmodeflg=1"
+            logger.info(f"Scraping URL: {url}")
             try:
                 resp = requests.get(url, headers={"User-Agent": "Mozilla/5.0"}, timeout=10)
-                resp.raise_for_status() # Raise an exception for bad status codes
+                resp.raise_for_status()
                 resp.encoding = 'utf-8'
                 soup = BeautifulSoup(resp.text, 'html.parser')
             except requests.exceptions.RequestException as e:
-                print(f"Error fetching {url}: {e}")
+                logger.warning(f"Error fetching {url}: {e}")
                 continue # Skip this source if fetch fails
 
             if bs_code == '010': # New listings
                 items = soup.select('.cassette_list-item')
-                print(f"Found {len(items)} new listing items for {keyword} in region {region_code}") # Debugging
+                logger.info(f"Found {len(items)} new listing items for {keyword} in region {region_code}") # Debugging
                 for li in items:
                     data = {}
                     title_tag = li.select_one('.cassette_header-title')
@@ -93,7 +106,7 @@ class SuumoScraper:
 
             else: # Used listings
                 items = soup.select('.property_unit')
-                print(f"Found {len(items)} used listing items for {keyword} in region {region_code}") # Debugging
+                logger.info(f"Found {len(items)} used listing items for {keyword} in region {region_code}") # Debugging
                 for card in items:
                     data = {}
                     title_tag = card.select_one('.property_unit-title a')
@@ -126,5 +139,5 @@ class SuumoScraper:
                     data['source'] = 'suumo' # Add source
                     if data.get('title'): # Basic validation using English key
                         results.append(data)
-        print(f"Scraping finished for {keyword}. Found {len(results)} total listings.") # Debugging
+        logger.info(f"Scraping finished for {keyword}. Found {len(results)} total listings.") # Debugging
         return results
