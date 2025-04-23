@@ -38,6 +38,8 @@ prompt = ChatPromptTemplate.from_messages([
 agent = create_openai_functions_agent(llm, tools, prompt)
 agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=True)
 
+print('DEBUG: Tool types:', [type(t) for t in tools])
+
 def main():
     parser = argparse.ArgumentParser(description="jlistings LLM REPL")
     parser.add_argument('-e', '--execute', type=str, help='Run a single command as the first input')
@@ -59,12 +61,11 @@ def main():
                 result = agent_executor.invoke({"input": user_input})
                 print(f"\n{result['output']}")
             except Exception as e:
-                if "insufficient_quota" in str(e) or "quota" in str(e).lower():
-                    print("\n[ERROR] Your OpenAI API key has exceeded its quota or does not have sufficient billing enabled.")
-                    print("Please visit https://platform.openai.com/settings/organization/billing/overview to recharge your account or check your billing status.")
-                    break
-                else:
-                    print(f"\n[ERROR] {e}")
+                print(f"\n[ERROR] {e}")
+                if args.one_shot:
+                    import sys
+                    sys.exit(1)
+                continue
             if args.one_shot:
                 break
     except KeyboardInterrupt:

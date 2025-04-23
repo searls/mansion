@@ -1,6 +1,7 @@
 from bs4 import BeautifulSoup
 import os
 import json
+from typing import Literal
 
 class SuumoScraper:
     def __init__(self):
@@ -27,7 +28,9 @@ class SuumoScraper:
             return candidates[0]
         raise ValueError(f'Could not find region for keyword: {keyword}')
 
-    def scrape(self, keyword, region=None):
+    def scrape(self, keyword, region=None, source: Literal['suumo'] = 'suumo'):
+        if source != 'suumo':
+            raise ValueError('source must be "suumo" for SuumoScraper')
         import requests
         from urllib.parse import quote
         if not keyword:
