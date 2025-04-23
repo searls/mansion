@@ -22,4 +22,3 @@ if __name__ == '__main__':
     query = sys.argv[1]
     region = sys.argv[2] if len(sys.argv) > 2 else None
     main(query, region)
-    sys.exit(0)  # Ensure one-shot exit
