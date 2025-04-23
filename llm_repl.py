@@ -12,8 +12,8 @@ warnings.filterwarnings("ignore", category=UserWarning, module="langsmith.client
 
 from langchain_openai import ChatOpenAI
 from langchain.agents import create_openai_functions_agent, AgentExecutor
-from langchain.prompts import ChatPromptTemplate, MessagesPlaceholder # Import prompt components
-from tools.langchain_tools import scrape_tool_structured, print_listings_structured
+from langchain import hub
+from tools.langchain_tools import scrape_tool
 
 api_key = os.environ.get("OPENAI_JLISTINGS_API_KEY")
 if not api_key:
@@ -22,18 +22,11 @@ if not api_key:
 llm = ChatOpenAI(openai_api_key=api_key, model="gpt-3.5-turbo", temperature=0)
 
 tools = [
-    scrape_tool_structured,
-    print_listings_structured,
+    scrape_tool,
     # Add enrich_tool and persist_tool here when ready
 ]
 
-# Custom Prompt Template
-prompt = ChatPromptTemplate.from_messages([
-    ("system", "You are a helpful assistant. When you receive a list of listings from the scrape_tool, pass this list as the 'listings' argument to the print_listings tool."), # Reverted to simpler instruction
-    MessagesPlaceholder(variable_name="chat_history", optional=True),
-    ("human", "{input}"),
-    MessagesPlaceholder(variable_name="agent_scratchpad"),
-])
+prompt = hub.pull("hwchase17/openai-functions-agent")
 
 agent = create_openai_functions_agent(llm, tools, prompt)
 agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=True)
