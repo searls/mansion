@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+
+set -e
+
+project-dotfiles-link
+bundle
+yarn
+
+# Run the playwright installer
+export PLAYWRIGHT_CLI_VERSION=$(bundle exec ruby -e 'require "playwright"; puts Playwright::COMPATIBLE_PLAYWRIGHT_VERSION.strip')
+PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1 yarn add -D "playwright@$PLAYWRIGHT_CLI_VERSION"
+yarn run playwright install chromium
+
+DEVELOPMENT_DB_EXISTS=$(psql -lqt | cut -d '|' -f 1 | grep -w mansion_development | wc -l)
+TEST_DB_EXISTS=$(psql -lqt | cut -d '|' -f 1 | grep -w mansion_test | wc -l)
+if [ "$DEVELOPMENT_DB_EXISTS" -eq 0 ] || [ "$TEST_DB_EXISTS" -eq 0 ]; then
+  echo "Creating development and test databases."
+  bin/rails db:create
+fi
+
+bin/rails db:migrate db:seed

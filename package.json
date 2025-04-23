@@ -1,0 +1,6 @@
+{
+  "license": "UNLICENSED",
+  "devDependencies": {
+    "playwright": "1.51.0"
+  }
+}
