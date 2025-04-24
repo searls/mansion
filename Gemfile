@@ -21,6 +21,7 @@ gem "nokogiri"
 
 # Engine stuff
 gem "mission_control-jobs"
+gem "searls-auth"
 
 # Frontend stuff
 gem "propshaft"

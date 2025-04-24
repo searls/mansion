@@ -1,0 +1,5 @@
+#!/usr/bin/env ruby
+
+require_relative "../config/environment"
+
+User.find_or_create_by!(email: "searls@gmail.com")

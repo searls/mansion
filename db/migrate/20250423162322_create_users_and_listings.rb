@@ -8,15 +8,14 @@ class CreateUsersAndListings < ActiveRecord::Migration[8.0]
     end
 
     create_table :listings do |t|
-      t.string :source, null: false
       t.string :suumo_id, null: false
       t.string :suumo_url, null: false
 
+      t.string :raw_title # 水戸島元町（富士駅） 3560万円
       t.string :title
-      t.string :url, null: false
       t.string :price_description
       t.integer :price_man_en
-      t.string :location_description
+      t.string :address_description # 浜松市中央区元浜町80番地-1
       t.string :prefecture
       t.string :city
       t.string :ward
@@ -27,7 +26,7 @@ class CreateUsersAndListings < ActiveRecord::Migration[8.0]
       t.string :building_name
       t.string :postal_code
 
-      t.string :station_description
+      t.string :station_description # ＪＲ東海道本線/浜松 徒歩9分
       t.integer :station_minutes_walk
       t.integer :station_meters_distance
       t.string :area_description # 71.71m2～85.22m2
