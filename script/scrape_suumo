@@ -1,4 +1,106 @@
 #!/usr/bin/env ruby
+# frozen_string_literal: true
 
 require_relative "../config/environment"
+require "net/http"
+require "uri"
+require "nokogiri"
+require_relative "../app/lib/suumo_region_lookup"
 
+unless (query = ARGV[0])
+  warn "Usage: scrape_suumo <query>"
+  exit 1
+end
+
+lookup_path = File.expand_path("../spikes/initial_vibe/research/suumo_areas.json", __dir__)
+region_lookup = SuumoRegionLookup.new(lookup_path)
+region_code = region_lookup.find_region_code(query)
+
+# Helper for HTTP GET
+fetch_html = proc { |url|
+  uri = URI.parse(url)
+  req = Net::HTTP::Get.new(uri)
+  req["User-Agent"] = "Mozilla/5.0"
+  Net::HTTP.start(uri.host, uri.port, use_ssl: uri.scheme == "https") do |http|
+    res = http.request(req)
+    res.body.force_encoding("UTF-8")
+  end
+}
+
+# Upsert helper
+def upsert_listing!(props)
+  suumo_id = props[:suumo_id]
+  return unless suumo_id
+  Listing.find_or_initialize_by(suumo_id: suumo_id)
+    .update!(props.merge(refreshed_at: Time.current))
+end
+
+# --- Scrape logic ---
+[
+  ["010", false], # new
+  ["011", true]   # used
+].each do |bs_code, used|
+  url = "https://suumo.jp/jj/bukken/ichiran/JJ010FJ001/?ar=#{region_code}&bs=#{bs_code}&fw=#{URI.encode_www_form_component(query)}"
+  html = fetch_html.call(url)
+  doc = Nokogiri::HTML.parse(html)
+  if bs_code == "010"
+    # New listings: .cassette_list-item
+    doc.css(".cassette_list-item").each do |li|
+      title_tag = li.at_css(".cassette_header-title")
+      suumo_url = title_tag&.[]("href") ? "https://suumo.jp#{title_tag["href"]}" : nil
+      suumo_id = suumo_url&.match(%r{/nc_(\d+)/})&.[](1)
+      raw_title = title_tag&.text&.strip
+      raw_address = li.at_css('.cassette_basic-title:contains("所在地") + .cassette_basic-value')&.text&.strip
+      raw_station = li.at_css('.cassette_basic-title:contains("交通") + .cassette_basic-value')&.text&.strip
+      raw_price = li.at_css(".cassette_price-accent")&.text&.strip
+      desc = li.at_css(".cassette_price-description")&.text&.strip
+      if desc&.include?("/")
+        raw_layout, raw_area = desc.split("/", 2).map(&:strip)
+      else
+        raw_layout = desc
+        raw_area = nil
+      end
+      raw_construction_date = li.at_css('.cassette_basic-title:contains("引渡時期") + .cassette_basic-value')&.text&.strip
+      upsert_listing!(
+        suumo_id: suumo_id,
+        suumo_url: suumo_url,
+        raw_title: raw_title,
+        raw_price: raw_price,
+        raw_address: raw_address,
+        raw_station: raw_station,
+        raw_area: raw_area,
+        raw_layout: raw_layout,
+        raw_construction_date: raw_construction_date,
+        used: used
+      )
+    end
+  else
+    # Used listings: .property_unit
+    doc.css(".property_unit").each do |card|
+      title_tag = card.at_css(".property_unit-title a")
+      suumo_url = title_tag&.[]("href") ? "https://suumo.jp#{title_tag["href"]}" : nil
+      suumo_id = suumo_url&.match(%r{/nc_(\d+)/})&.[](1)
+      raw_title = title_tag&.text&.strip
+      props = {
+        suumo_id: suumo_id,
+        suumo_url: suumo_url,
+        raw_title: raw_title,
+        used: used
+      }
+      card.css(".property_unit-info .dottable-line dl").each do |dl|
+        label = dl.at_css("dt")&.text&.strip
+        value = dl.at_css("dd")&.text&.strip
+        case label
+        when "販売価格" then props[:raw_price] = value
+        when "所在地" then props[:raw_address] = value
+        when "沿線・駅" then props[:raw_station] = value
+        when "専有面積" then props[:raw_area] = value
+        when "間取り" then props[:raw_layout] = value
+        when "バルコニー" then props[:raw_balcony] = value
+        when "築年月" then props[:raw_construction_date] = value
+        end
+      end
+      upsert_listing!(props)
+    end
+  end
+end
