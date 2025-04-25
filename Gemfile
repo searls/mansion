@@ -16,7 +16,6 @@ gem "solid_queue"
 gem "actioncable-enhanced-postgresql-adapter"
 
 # Scraping stuff
-gem "httparty"
 gem "nokogiri"
 
 # Engine stuff

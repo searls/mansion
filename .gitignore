@@ -39,4 +39,4 @@
 # Ignoring b/c i'm symlinking a global one
 /.github/copilot-instructions.md
 
-/node_modules
+node_modules
