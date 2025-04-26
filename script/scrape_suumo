@@ -2,6 +2,8 @@
 # frozen_string_literal: true
 
 require_relative "../config/environment"
+Rails.logger = Logger.new($stdout)
+Rails.logger.level = Logger::INFO
 require "net/http"
 require "uri"
 require "nokogiri"
@@ -40,7 +42,14 @@ end
   ["010", false], # new
   ["011", true]   # used
 ].each do |bs_code, used|
-  url = "https://suumo.jp/jj/bukken/ichiran/JJ010FJ001/?ar=#{region_code}&bs=#{bs_code}&fw=#{URI.encode_www_form_component(query)}"
+  url = if bs_code == "011"
+    # Used listings
+    "https://suumo.jp/jj/bukken/ichiran/JJ012FC001/?ar=#{region_code}&bs=011&md=2&md=3&md=4&md=5&et=10&fw=#{URI.encode_www_form_component(query)}&po=16&pj=2&pc=100&cnb=0&cn=10"
+  else
+    # New listings
+    "https://suumo.jp/jj/bukken/ichiran/JJ011FC001/?ar=#{region_code}&bs=010&tj=0&po=5&pj=1&pc=100&fw=#{URI.encode_www_form_component(query)}&md=2&md=3&md=4&md=5&bknlistmodeflg=1"
+  end
+  Rails.logger.info("Searching Suumo #{used ? "used" : "new"}: #{url}")
   html = fetch_html.call(url)
   doc = Nokogiri::HTML.parse(html)
   if bs_code == "010"
